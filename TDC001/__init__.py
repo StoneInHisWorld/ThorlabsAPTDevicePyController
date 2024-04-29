@@ -1,3 +1,5 @@
+from time import sleep
+
 from pylablib.devices import Thorlabs
 from tqdm import tqdm
 
@@ -23,19 +25,22 @@ def move_and_handle(stage, dis_per_step, n_step,
         print(f"电机归位")
     for wait in range(10, 0, -1):
         print(f'\r实验将于{wait}秒后开始，请做好准备！', flush=True, end='')
+        sleep(1)
     with tqdm(range(n_step), unit='步', position=0, desc='移动中……', mininterval=1) as pbar:
-        if before_handler is not None:
-            before_handler(stage.get_position())
-        pbar.set_description("移动中……")
-        stage.move_by(dis_per_step)
-        stage.wait_move()
-        cur_pos = stage.get_position()
-        if back_handler is not None:
-            back_handler(stage.get_position())
-        pbar.set_description(f"当前位置为：{cur_pos}")
-    for wait in range(10, 0, -1):
-        print(f'\r电机将于{wait}秒后归位，请做好准备！', flush=True, end='')
+        for _ in pbar:
+            if before_handler is not None:
+                before_handler(stage.get_position())
+            pbar.set_description("移动中……")
+            stage.move_by(dis_per_step)
+            stage.wait_move()
+            cur_pos = stage.get_position()
+            if back_handler is not None:
+                back_handler(stage.get_position())
+            pbar.set_description(f"当前位置为：{cur_pos}")
     if back:
+        for wait in range(10, 0, -1):
+            print(f'\r电机将于{wait}秒后归位，请做好准备！', flush=True, end='')
+            sleep(1)
         stage.move_to(0)
         stage.wait_move()
 
